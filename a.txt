@@ -1,8 +1,9 @@
 learning git
 Adding one more line in learning git
 Adding third line
-<<<<<<< HEAD
 
 Learning Branching and Merrging conflict
 
 Adding fourth line
+modifying a.txt
+newline
