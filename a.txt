@@ -1,9 +1,9 @@
 learning git
 Adding one more line in learning git
 Adding third line
-
 Learning Branching and Merrging conflict
-
 Adding fourth line
 modifying a.txt
 newline
+
+Addding information directly in Remote repository
