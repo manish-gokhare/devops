@@ -1,0 +1,15 @@
+Docker commands
+  # docker run <image> (It is foregroung mode).
+  Images will be stored in /var/lig/docker/overlay2 (sudo find /var/lib/docker/overlay2/ -type d -name '*nginx*'
+  # docker run -d nginx (detached mode)
+  [root@ip-172-31-42-140 overlay2]# docker run -d nginx
+   ffb1ad5d46df0ad2cd9958f368641839a30426dcea987e1ed507dc99433fc9cc
+  # docker ps (to see all active container which are running)
+  
+[root@ip-172-31-42-140 overlay2]# docker ps  (It shows oly running container)
+CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS     NAMES
+ffb1ad5d46df   nginx     "/docker-entrypoint.…"   2 minutes ago   Up 2 minutes   80/tcp    objective_mayer
+15a9d9fa937d   nginx     "/docker-entrypoint.…"   5 days ago      Up 5 days      80/tcp    xenodochial_bohr
+
+Note : docker ps -a (It shows all the container stop/running)
+
