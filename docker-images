@@ -1,0 +1,90 @@
+A **Docker image** is like a snapshot or blueprint of a containerized application 📦. 
+  It contains everything needed to run an app: code, runtime, libraries, environment variables, and configuration files—all bundled into
+  a single, portable package.
+
+---
+
+### 🧬 Key Characteristics of Docker Images
+
+- **Immutable**: Once built, an image doesn’t change. You can only create new versions.
+- **Layered**: Built from stacked filesystem layers. Each layer adds or modifies files.
+- **Portable**: Can run on any system with Docker installed—Linux, Windows, Mac.
+- **Reusable**: You can share images via registries like Docker Hub and reuse them across environments.
+
+---
+
+### 🛠️ How Docker Images Work
+
+1. You write a **Dockerfile** with instructions.
+2. Docker builds the image layer by layer.
+3. You run the image to create a **container**—a live instance of the image.
+
+Think of it like baking a cake:
+- The **Dockerfile** is your recipe.
+- The **image** is the baked cake.
+- The **container** is someone eating a slice.
+
+Let’s build a **custom Docker image for a Python app**—step by step. You’ll write a simple Python script, create a Dockerfile, and build your image like a pro 🐳🐍
+
+---
+
+### 🧱 Step 1: Create Your Python App
+
+Let’s start with a basic script.
+
+📄 **File**: `app.py`  
+📍 **Location**: Your project folder (e.g., `/home/ec2-user/python-docker-app/`)
+
+```python
+print("Hello from inside the Docker container!")
+```
+
+---
+
+### 📄 Step 2: Create a Dockerfile
+
+📄 **File**: `Dockerfile`  
+📍 **Same folder as `app.py`**
+
+```Dockerfile
+# Use official Python base image
+FROM python:3.9-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy your Python script into the container
+COPY app.py .
+
+# Define default command
+CMD ["python", "app.py"]
+```
+
+---
+
+### 🔨 Step 3: Build Your Docker Image
+
+Run this from the folder containing your Dockerfile:
+
+```bash
+docker build -t python-hello .
+```
+
+- `-t python-hello`: Tags the image with a name.
+- `.`: Tells Docker to use the current directory.
+
+---
+
+### 🚀 Step 4: Run Your Container
+
+```bash
+docker run python-hello
+```
+
+You should see:
+```
+Hello from inside the Docker container!
+```
+
+---
+
