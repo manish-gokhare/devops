@@ -292,9 +292,572 @@ uid=1001(manish) gid=1001(manish) groups=1001(manish)
 root@64f1f3229d2c:/# ls -ld /home/manish
 drwxr-xr-x. 2 manish manish 6 Jul 13 08:23 /home/manish
 
+## Rename the container. 
 
-Want to explore how volumes or networks behave when you remove containers? Or how to clean up everything in one go? I’ve got some slick tricks for that too.
+It just rename the container. Container ID renames the same.
+```bash
+docker run --name my-ubuntu -it ubuntu
+# Do stuff inside the container...
 
-Want to see how this works with Docker Compose or how to reuse names across sessions? I can show you some neat tricks.
+docker rename my-ubuntu new-ubuntu
+```
+🛠️ **Renaming a Docker Container: What Changes and What Doesn’t**
 
-Want to go further and remove containers after stopping them? Or explore how signals like `SIGTERM` vs `SIGKILL` affect container behavior? I can walk you through that too.
+To rename a container, use the `docker rename` command:
+
+```bash
+docker rename old_container_name new_container_name
+```
+
+---
+
+### 🔄 What Changes
+- **Container Name**: The friendly name you use to reference the container will be updated.
+  - Example: `my-ubuntu` becomes `ubuntu-dev`.
+
+---
+
+### 🚫 What Doesn’t Change
+| Attribute        | Changes? | Explanation                                                                 |
+|------------------|----------|------------------------------------------------------------------------------|
+| **Container ID** | ❌ No     | The container ID is a unique identifier tied to the container’s lifecycle. It remains the same. |
+| **Container State** | ❌ No     | Renaming does **not** stop, restart, or alter the container’s running state. |
+
+So if your container was running before the rename, it’ll still be running afterward — just under a new name.
+
+---
+
+### 🧪 Quick Check
+After renaming, you can verify:
+```bash
+docker ps -a
+```
+
+You’ll see the same container ID, same status, but with the new name.
+
+
+🧭 **Understanding Ports When Running an NGINX Container**
+
+When you start a Docker container with the NGINX image, you're launching a lightweight **web server** that listens on **port 80** by default inside the container. This is the standard HTTP port used by web servers to serve web pages.
+
+---
+
+### 🌐 How Port Mapping Works
+
+Docker containers are isolated from your host system, so to access NGINX from your browser or host machine, you need to **map a host port to the container’s internal port**.
+
+#### 🔧 Example Command
+```bash
+docker run -d --name my-nginx -p 8080:80 nginx
+```
+
+- `-p 8080:80`: Maps **host port 8080** to **container port 80**
+- `nginx`: Uses the official NGINX image
+- `-d`: Runs in detached mode
+
+Now, when you visit `http://localhost:8080`, you're accessing the NGINX web server running inside the container.
+
+---
+
+### 🧠 What’s Happening Internally
+
+| Component         | Port Used | Role                                      |
+|------------------|-----------|-------------------------------------------|
+| NGINX (in container) | 80        | Listens for HTTP requests                |
+| Docker Host       | 8080 (or any) | Receives traffic and forwards to container |
+
+You can change the host port to anything you like (e.g., `-p 3000:80`) — just make sure it’s not already in use.
+
+
+---
+
+🔍 **`docker inspect`: Deep Dive into Your Container’s Soul**
+
+The `docker inspect` command is your backstage pass to everything happening inside a Docker object — whether it’s a container, image, volume, or network. 
+It reveals **low-level configuration details** in structured **JSON format**, making it a powerful tool for debugging, auditing, and understanding your containerized environment.
+
+---
+
+### 🛠️ **Basic Syntax**
+```bash
+docker inspect <container_name_or_id>
+```
+- You can also inspect multiple objects:
+  ```bash
+  docker inspect container1 container2
+  ```
+
+---
+
+### 🎯 **Purpose of `docker inspect`**
+- **Reveal Configuration**: See environment variables, mount points, entrypoint, and more.
+- **Check Runtime State**: View whether the container is running, paused, or exited.
+- **Network Info**: Get IP address, MAC address, port bindings, and network mode.
+- **Resource Usage**: With `--size`, inspect file system usage.
+- **Automation & Scripting**: Extract specific fields using Go templates for clean output.
+
+---
+
+### 📋 **Common Use Cases**
+| Task                                | Command Example                                                                 |
+|-------------------------------------|----------------------------------------------------------------------------------|
+| Get full container details          | `docker inspect my-container`                                                   |
+| Extract container IP address        | `docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' my-container` |
+| Check container status              | `docker inspect -f '{{.State.Status}}' my-container`                            |
+| View environment variables          | `docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' my-container`    |
+| See mounted volumes                 | `docker inspect -f '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{end}}' my-container` |
+
+---
+
+### 🧪 **Bonus Tip: Format Output with Templates**
+Use the `-f` or `--format` flag to extract specific fields:
+```bash
+docker inspect -f '{{.Config.Image}}' my-container
+```
+
+
+## Example:
+
+[ec2-user@ip-172-31-42-140 ~]$ docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' my-nginx
+172.17.0.2
+[ec2-user@ip-172-31-42-140 ~]$ docker inspect -f '{{.NetworkSettings.Networks.bridge.IPAddress}}' my-nginx
+172.17.0.2
+
+
+This returns the image name used to create the container.
+
+---
+
+Yes, you can install Git inside a running container using `docker exec`, but there are a couple of important things to keep in mind to make it work smoothly.
+
+---
+
+
+```bash
+docker exec -u root -it my-nginx apt-get update
+docker exec -u root -it my-nginx apt-get install -y git
+```
+
+- `-u root`: Ensures you're running the command as the root user (required for installing packages).
+- `-it`: Makes the session interactive so you can see output.
+- `my-nginx`: The name or ID of your running container.
+- `apt-get update`: Refreshes the package list.
+- `apt-get install -y git`: Installs Git without prompting for confirmation.
+
+---
+
+### ⚠️ Common Pitfalls
+
+- **Missing `apt-get update`**: If you skip this, you’ll likely get “Unable to locate package” errors.
+- **Non-root user**: If your container runs as a non-root user, installation will fail unless you elevate privileges.
+- **Minimal base image**: Some containers (like official `nginx`) are extremely lightweight and may not even have `apt` installed. You can check by running:
+  ```bash
+  docker exec -it my-nginx which apt-get
+  ```
+
+---
+
+### 🧪 Alternative: Use a Custom Dockerfile
+
+If you want Git available every time the container starts, it’s better to bake it into the image:
+
+```Dockerfile
+FROM nginx
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+```
+
+Then build and run:
+```bash
+docker build -t nginx-with-git .
+docker run -d --name my-nginx nginx-with-git
+```
+
+---
+To view logs from a Docker container, you’ve got several handy options depending on your setup and preferences. Here’s a breakdown for you, Manish 🧾🐳
+
+---
+
+### 🧰 Basic Command-Line Method
+
+Use the `docker logs` command:
+
+```bash
+docker logs <container_name_or_id>
+```
+
+This shows all logs from the container’s **stdout** and **stderr** streams.
+
+#### 🔍 Useful Flags:
+- `-f` or `--follow`: Stream logs in real time (like `tail -f`)
+- `--tail N`: Show only the last N lines
+- `--since` / `--until`: Filter logs by time range
+- `-t` or `--timestamps`: Include timestamps
+
+Example:
+```bash
+docker logs -f --tail 50 my-nginx
+```
+
+---
+
+The `docker container prune` command is your cleanup crew for Docker 🧹—it removes **all stopped containers** from your system to free up space and reduce clutter.
+
+---
+
+### 🧾 What It Does
+
+```bash
+docker container prune
+```
+
+- Deletes **only stopped containers** (those that have exited or crashed).
+- **Does not** touch running containers.
+- Prompts for confirmation unless you use `--force`.
+
+---
+
+### 🛠️ Common Options
+
+| Option         | Description                                      |
+|----------------|--------------------------------------------------|
+| `--force`      | Skip confirmation prompt                         |
+| `--filter`     | Remove containers based on conditions (e.g., age) |
+
+Example with filter:
+```bash
+docker container prune --filter "until=24h"
+```
+Removes containers stopped more than 24 hours ago.
+
+---
+
+### ⚠️ Warning
+
+This command is irreversible. Once containers are pruned, their data is gone unless you’ve mounted volumes externally.
+
+---
+
+Great question, Manish! Let’s clear up the difference between `docker prune` and `docker rm`—they both remove things, but they work in very different ways 🧹🗑️
+
+---
+
+### 🔍 `docker rm`: Manual Removal
+- **Purpose**: Deletes specific containers that you name.
+- **Usage**:
+  ```bash
+  docker rm <container_id_or_name>
+  ```
+- **Behavior**:
+  - Only removes the containers you explicitly list.
+  - Requires containers to be **stopped** first (unless you use `-f` to force).
+  - Gives you **full control** over what gets deleted.
+
+---
+
+### 🧹 `docker container prune`: Automatic Cleanup
+- **Purpose**: Removes **all stopped containers** in one go.
+- **Usage**:
+  ```bash
+  docker container prune
+  ```
+- **Behavior**:
+  - Deletes every container that’s not running.
+  - Can be filtered by age or label.
+  - Useful for **bulk cleanup** and reclaiming disk space.
+
+---
+
+### ⚖️ Key Differences
+
+| Feature                  | `docker rm`                          | `docker container prune`                  |
+|--------------------------|--------------------------------------|-------------------------------------------|
+| Scope                    | Specific containers                  | All stopped containers                    |
+| Control                  | Manual                               | Automatic                                 |
+| Confirmation             | No prompt (unless scripted)          | Prompts unless `--force` is used          |
+| Filtering                | Not supported                        | Supports `--filter` (e.g., by age)        |
+| Risk of accidental loss | Low (you choose what to delete)      | Medium (deletes everything stopped)       |
+
+---
+
+### 🎥 Visual Guides That Nail It
+
+These videos explain the difference with real examples and demos:
+
+1. [Docker! Pruning Images, Containers and More](https://www.youtube.com/watch?v=aWwloz_bfdI) — Breaks down how `prune` differs from `rm` and `rmi`, with practical use cases.
+2. [Docker Quietly Eats Drives | Docker Prune & Cleanup Guide](https://www.youtube.com/watch?v=3Q0cVWR7RU4) — Shows how `prune` helps clean up disk space and compares it with manual removal.
+3. [How To Remove All Stopped Containers And Unused Images ...](https://www.youtube.com/watch?v=LldNpfXDRJ4) — Demonstrates both `docker rm` and `docker container prune` side-by-side.
+4. [Clean Up Unused Docker Containers, Images, Network ...](https://www.youtube.com/watch?v=wO8vmDUWNw4) — Covers how to clean up zombie containers and when to use each command.
+5. [Docker tip: docker system prune and df](https://www.youtube.com/watch?v=_4QzP7uwtvI) — Explains how `docker system prune` expands on `container prune` to clean up everything.
+
+
+
+The `docker stats` command is your real-time dashboard for monitoring container resource usage 📊. It streams live metrics like CPU, memory, network, and disk I/O for running containers—perfect for spotting performance bottlenecks or runaway processes.
+
+---
+
+### 🧠 What It Does
+
+```bash
+docker stats
+```
+
+- Displays a **live stream** of resource usage for all running containers.
+- Shows metrics like:
+  - **CPU %**: How much CPU each container is using.
+  - **MEM USAGE / LIMIT**: Memory used vs. memory limit.
+  - **MEM %**: Memory usage as a percentage.
+  - **NET I/O**: Network traffic in/out.
+  - **BLOCK I/O**: Disk read/write activity.
+  - **PIDs**: Number of processes/threads.
+
+---
+
+### 🛠️ Common Options
+
+| Option            | Description                                                  |
+|-------------------|--------------------------------------------------------------|
+| `--no-stream`     | Show a one-time snapshot instead of continuous updates       |
+| `--format`        | Customize output using Go templates                          |
+| `--all`           | Include stopped containers (though they show zero usage)     |
+| `--no-trunc`      | Prevent truncation of long output fields                     |
+
+Example:
+```bash
+docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
+```
+
+---
+
+### 🎯 Target Specific Containers
+
+You can monitor just one or a few containers:
+```bash
+docker stats my-nginx my-db
+```
+
+---
+
+Sure thing, Manish! The `docker cp` command lets you copy files **between your host machine and a Docker container**—kind of like a bridge 🛤️.
+
+---
+
+### 📦 Basic Syntax
+```bash
+docker cp <source_path> <container_name>:<destination_path>
+```
+
+- **From host to container**:
+  ```bash
+  docker cp myfile.txt my-nginx:/app/myfile.txt
+  ```
+- **From container to host**:
+  ```bash
+  docker cp my-nginx:/app/myfile.txt ./myfile.txt
+  ```
+
+---
+
+### 🧠 Key Notes
+- Works with both **files and folders**
+- Container can be **running or stopped**
+- Destination path must exist inside the container
+
+---
+
+
+
+[ec2-user@ip-172-31-42-140 ~]$ echo "this is a test file andd copying using docker cp command" > test-copy.txt
+[ec2-user@ip-172-31-42-140 ~]$ docker ps
+CONTAINER ID   IMAGE     COMMAND                  CREATED             STATUS             PORTS                                     NAMES
+208f68e562f4   nginx     "/docker-entrypoint.…"   About an hour ago   Up About an hour   0.0.0.0:8080->80/tcp, [::]:8080->80/tcp   my-nginx
+
+[ec2-user@ip-172-31-42-140 ~]$ docker cp test-copy.txt 208f68e562f4:/tmp
+Successfully copied 2.05kB to 208f68e562f4:/tmp
+[ec2-user@ip-172-31-42-140 ~]$ docker exec -it 208f68e562f4 ls -l /tmp
+total 4
+-rw-r--r--. 1 1000 1000 57 Jul 13 10:19 test-copy.txt
+
+
+
+Absolutely, Manish! Docker restart policies are like auto-pilot settings for your containers 🚀—they control whether and when a container should automatically restart after it stops or crashes.
+
+---
+
+### 🔁 What Is a Restart Policy?
+
+A **restart policy** tells Docker how to handle container restarts:
+- After a crash or failure
+- After a system reboot
+- Or even after manual stops (depending on the policy)
+
+You set it using the `--restart` flag when running a container:
+```bash
+docker run --restart <policy> my-container
+```
+
+---
+
+### 📋 Types of Restart Policies
+
+| Policy           | Behavior                                                                 |
+|------------------|--------------------------------------------------------------------------|
+| `no`             | **Default.** Never restart the container automatically.                  |
+| `always`         | Restart the container **no matter what**, even after manual stop or reboot. |
+| `unless-stopped` | Restart unless you manually stopped it. Won’t restart after a manual stop. |
+| `on-failure[:N]` | Restart only if the container exits with an error (non-zero exit code). Optionally retry up to `N` times. |
+
+---
+
+### 🧠 How It Works
+
+- Docker waits **10 seconds** after a container starts before applying the policy—this avoids restart loops.
+- If you **manually stop** a container, most policies won’t restart it unless the Docker daemon itself restarts.
+
+---
+
+### 🛠️ Example Usage
+
+```bash
+docker run --restart unless-stopped nginx
+```
+This ensures your Nginx container restarts automatically unless you explicitly stop it.
+
+---
+
+### To restrict memory and CPU usage for a Docker container and validate it, you’ll use runtime flags when starting the container and monitoring tools to check its behavior. Here’s a complete guide, Manish 🧠⚙️
+
+---
+
+### 🧰 Step 1: Set Resource Limits When Running a Container
+
+#### ✅ Memory Limit
+```bash
+docker run -m 512m nginx
+```
+- `-m` or `--memory`: Sets a hard memory limit (e.g., 512 MB).
+- You can also add:
+  ```bash
+  --memory-swap=1g
+  ```
+  to allow 512 MB of swap memory.
+
+#### ✅ CPU Limit
+```bash
+docker run --cpus="1.5" nginx
+```
+- `--cpus`: Limits container to 1.5 CPU cores.
+- You can also use:
+  ```bash
+  --cpu-shares=512
+  ```
+  for relative CPU priority (default is 1024).
+
+---
+
+### 📦 Step 2: Set Limits in Docker Compose (Version 3+)
+
+```yaml
+services:
+  web:
+    image: nginx
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+```
+- Use `docker stack deploy` to apply these limits in swarm mode.
+
+
+
+### 🔍 Step 3: Validate Resource Usage
+
+#### 📊 Use `docker stats`
+```bash
+docker stats <container_name>
+```
+- Shows live CPU %, memory usage, network I/O, and more.
+
+Check out [Docker - Checking Container Resource Usage #docker #devops](https://www.youtube.com/watch?v=9BhEgU-eU58) for a clear explanation of the output.
+
+#### 🔎 Use `docker inspect`
+```bash
+docker inspect <container_name> | grep -i memory
+docker inspect <container_name> | grep -i cpu
+```
+- Confirms the limits applied.
+
+Watch [Resources Limitations.](https://www.youtube.com/watch?v=YL2IZjAbxzs) for a demo of inspecting and verifying limits.
+
+---
+
+### ⚠️ Tips & Gotchas
+
+- Be cautious with memory limits—containers exceeding them may be killed. [Be Careful Setting Memory Limits for Docker Containers](https://www.youtube.com/watch?v=EjheIfFD7Dc) explains the risks and how to avoid OOM errors.
+- [Hands-On with Docker Resource Constraints](https://www.youtube.com/watch?v=RcuiszNNm_g) shows how to simulate and test limits in real time.
+- For monitoring across multiple containers, [Effortless Server and Docker Resource Monitoring: CPU ...](https://www.youtube.com/watch?v=vG8fFm_lI-o) introduces tools like Netdata and Glances.
+
+---
+
+
+Absolutely, Manish! Docker’s architecture is like a layered orchestra 🎼—each component plays a distinct role in turning your `docker run` command into a running container. Let’s break it down:
+
+---
+
+### 🧱 Core Components of Docker Architecture
+
+#### 1. **Docker Client (CLI)**
+- This is what you interact with when you type commands like `docker run`, `docker build`, etc.
+- It communicates with the Docker Daemon via REST API.
+
+#### 2. **Docker Daemon (`dockerd`)**
+- The brain of Docker 🧠.
+- Listens for Docker API requests and manages images, containers, volumes, and networks.
+- Delegates container lifecycle tasks to **containerd**.
+
+#### 3. **Containerd**
+- A lightweight daemon that handles container lifecycle: create, start, stop, delete.
+- Acts as a middle layer between `dockerd` and the low-level runtime.
+- Exposes a gRPC API and manages container snapshots, networking, and image pulling.
+
+#### 4. **Containerd-Shim**
+- A small process that sits between `containerd` and the actual container.
+- Keeps the container running independently of `containerd`.
+- Handles `stdin`, `stdout`, and `stderr`, and reaps zombie processes.
+
+#### 5. **RunC**
+- The actual container runtime 🛠️.
+- Implements the [OCI (Open Container Initiative)](https://opencontainers.org/) spec.
+- Uses Linux kernel features like namespaces and cgroups to create isolated environments.
+
+---
+
+### 🔄 How It All Works Together
+
+1. You run `docker run nginx`.
+2. Docker CLI sends the request to `dockerd`.
+3. `dockerd` asks `containerd` to create a container.
+4. `containerd` spawns a `containerd-shim` process.
+5. `containerd-shim` calls `runc` to start the container.
+6. `runc` sets up the container using Linux kernel features and exits.
+7. `containerd-shim` stays alive to manage the container’s IO and lifecycle.
+
+---
+
+### 🎥 Must-Watch Video Tutorials
+
+These videos explain the architecture visually and in depth:
+
+- [Docker Architecture | Docker components : daemon ...](https://www.youtube.com/watch?v=253o0hxwxm8) — Covers each component including `dockerd`, `containerd`, `containerd-shim`, and `runc` with diagrams and examples.
+- [Free Docker Fundamentals Course - Docker Architecture](https://www.youtube.com/watch?v=52SmfrVctB0) — Explains Docker Engine, Daemon, Client, and Registry in a beginner-friendly format.
+- [Docker - Tutorial 2 - Images, Containers, and Docker Server ...](https://www.youtube.com/watch?v=vhxnpsGHV30&pp=ygUNI2RvY2tlcmRlYW1vbg%3D%3D) — Shows how Docker CLI interacts with the server and what happens when you run a container.
+- [Free Docker Fundamentals Course - [DEMO] Interacting with ...](https://www.youtube.com/watch?v=DkIUPdRF7Fg) — Demonstrates how the Docker client and daemon work together in real-time.
+- [Docker BuildX: Level-Up Your Container Game with Multi ...](https://www.youtube.com/watch?v=6lS1Rjvfuig) — Explores how BuildX interacts with the Docker Daemon and supports multi-platform builds.
+- [How To Run a Docker Container as a Daemon in the ...](https://www.youtube.com/watch?v=aw4SH34yJOs) — Shows how to run containers in the background and what the daemon does behind the scenes.
+
+---
+
+Want to dive deeper into how `runc` uses namespaces or how `containerd` handles snapshots? I can walk you through those internals too!
