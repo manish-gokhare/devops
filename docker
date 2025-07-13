@@ -13,3 +13,288 @@ ffb1ad5d46df   nginx     "/docker-entrypoint.…"   2 minutes ago   Up 2 minutes
 
 Note : docker ps -a (It shows all the container stop/running)
 
+Great question, Manish! 😄
+
+If you launch a basic Ubuntu container in detached mode **without specifying a command that keeps it running**, it will typically exit right away. Here’s why:
+
+### 🧠 What Happens Behind the Scenes
+- Containers are designed to run a foreground process.
+- If the process (like a shell session) ends immediately, Docker assumes the container's job is done.
+- So a minimal command like this:
+  ```bash
+  docker run -d ubuntu
+  ```
+  starts the container, but it exits instantly because there's no long-running process (like `bash` waiting for input).
+
+### 📊 Status Outcomes
+| Scenario                              | Container Status | Explanation                                |
+|---------------------------------------|------------------|--------------------------------------------|
+| `docker run -d ubuntu`                | Exited           | No command keeps it alive                  |
+| `docker run -d ubuntu sleep 1000`     | Up (Running)     | Sleep command keeps process active         |
+| `docker run -it ubuntu` (interactive) | Up (Until Exit)  | Active while you're interacting            |
+
+### ✅ To Keep It Alive
+You can run a command that doesn’t exit immediately:
+```bash
+docker run -d ubuntu tail -f /dev/null
+```
+This will keep the container running until you explicitly stop it.
+
+### Interavtive mode 
+If you run:
+
+```bash
+docker run -it ubuntu
+```
+
+🟢 The container **will stay alive — but only while you're interacting with it**. Here's what happens:
+
+### 🔍 Breakdown
+- `-i` keeps STDIN open (interactive mode).
+- `-t` gives you a pseudo-terminal (so it feels like you're inside a real shell).
+- The default command for the Ubuntu image is usually `/bin/bash`.
+
+So when you run this command, Docker starts a container and drops you into an interactive shell. That shell is the container’s main process.
+
+### ⚠️ But Here's the Catch
+- If you **exit the shell** (e.g. type `exit` or press `Ctrl+D`), the container will stop.
+- The status changes from **Up** to **Exited**.
+
+### 🧪 Try it Out
+- After running it, in a separate terminal, type:
+  ```bash
+  docker ps
+  ```
+  You’ll see the container is "Up".
+- Now exit the shell in the original terminal.
+- Run `docker ps` again — and it’ll be gone from the list of running containers.
+- Use:
+  ```bash
+  docker ps -a
+  ```
+  To view containers that have exited.
+
+🛑 **Stopping or Killing Docker Containers in Detached Mode**
+
+When a container is running in detached mode (`-d`), it's working quietly in the background if any process is running inside that container. 
+You can stop or kill it using simple Docker commands.
+
+---
+
+### ✅ **To Stop a Container Gracefully**
+This sends a `SIGTERM` signal, allowing the container to shut down cleanly:
+```bash
+docker stop <container_name_or_id>
+```
+- Example:
+  ```bash
+  docker stop my-nginx
+  ```
+
+---
+
+### 💥 **To Kill a Container Immediately**
+This sends a `SIGKILL` signal, terminating the container forcefully:
+```bash
+docker kill <container_name_or_id>
+```
+- Example:
+  ```bash
+  docker kill my-nginx
+  ```
+
+---
+
+### 📋 **Find Running Containers**
+Before stopping or killing, list active containers:
+```bash
+docker ps
+```
+
+---
+
+### 🧹 **Stop All Running Containers**
+```bash
+docker stop $(docker ps -q)
+```
+
+### 🧨 **Kill All Running Containers**
+```bash
+docker kill $(docker ps -q)
+```
+
+---
+
+🧠 **Understanding `docker ps -q`**
+
+The `-q` flag stands for **quiet mode** — it tells Docker to show **only the container IDs**, without any extra details like image name, status, or ports.
+
+### 🔍 What It Does
+```bash
+docker ps -q
+```
+This command lists the **IDs of all currently running containers**. It's super useful when you want to script actions or chain commands.
+
+### 🧪 Example
+Let’s say you have three containers running:
+```bash
+docker ps
+```
+Output:
+```
+CONTAINER ID   IMAGE     STATUS     NAMES
+abc123         nginx     Up         web1
+def456         redis     Up         cache1
+ghi789         mysql     Up         db1
+```
+
+Now run:
+```bash
+docker ps -q
+```
+Output:
+```
+abc123
+def456
+ghi789
+```
+
+### ⚙️ Why Use It?
+- **Automation**: Combine with other commands like `docker stop $(docker ps -q)` to stop all running containers.
+- **Scripting**: Clean output makes it easy to loop through container IDs in shell scripts.
+
+🧭 **Using the `--name` Flag in Docker**
+
+The `--name` flag lets you assign a **custom name** to your container instead of letting Docker generate a random one like `eager_turing` or `sleepy_babbage`.
+
+---
+
+### 🛠️ Basic Syntax
+```bash
+docker run --name <your_container_name> <image_name>
+```
+
+### 📌 Example
+Let’s say you want to run an Ubuntu container and name it `my-ubuntu`:
+```bash
+docker run --name my-ubuntu -it ubuntu
+```
+- `--name my-ubuntu`: assigns the name.
+- `-it`: runs it interactively with a terminal.
+- `ubuntu`: the image you're using.
+
+Now you can refer to the container by name:
+```bash
+docker stop my-ubuntu
+docker start my-ubuntu
+docker rm my-ubuntu
+```
+
+---
+
+### 🎯 Why Use `--name`?
+- Easier to manage containers by name.
+- Useful in scripts and automation.
+- Enables DNS-based communication between containers on custom networks.
+
+
+Sure thing, Manish! Let’s break down what each of these Docker commands does when used with a container named `my-ubuntu`.
+
+---
+
+### 🛑 `docker stop my-ubuntu`
+This command **gracefully stops** the running container named `my-ubuntu`.
+
+- It sends a `SIGTERM` signal to the container’s main process.
+- If the process doesn’t exit within 10 seconds (default), Docker sends a `SIGKILL` to force it.
+- The container’s state changes from **Up** to **Exited**, but it still exists on your system.
+
+---
+
+### ▶️ `docker start my-ubuntu`
+This command **restarts** a previously stopped container.
+
+- It brings the container back to life using its original configuration.
+- The container resumes from where it left off (unless it was stateless).
+- You won’t get attached to the container’s terminal unless you use `docker attach`.
+
+---
+
+### 🧹 `docker rm my-ubuntu`
+This command **removes** the container entirely from your system.
+
+- It deletes the container’s metadata and filesystem.
+- You can’t restart it afterward unless you recreate it with `docker run`.
+- If the container is still running, you’ll get an error — unless you force it with:
+  ```bash
+  docker rm -f my-ubuntu
+  ```
+
+---
+
+### 🔄 Typical Lifecycle Flow
+```bash
+docker run --name my-ubuntu -it ubuntu
+# Do stuff inside the container...
+
+docker stop my-ubuntu
+docker start my-ubuntu
+docker rm my-ubuntu
+```
+
+
+[ec2-user@ip-172-31-42-140 ~]$ docker run --name my-ubuntu -itd ubuntu sleep 1000
+1970c03eeb9e31aa3a083f705b40ac9b0d71ad813849cdabd07fe434d7174db5
+[ec2-user@ip-172-31-42-140 ~]$ docker ps
+CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS     NAMES
+1970c03eeb9e   ubuntu    "sleep 1000"             7 seconds ago   Up 7 seconds             my-ubuntu
+67c624b9f63c   nginx     "/docker-entrypoint.…"   6 minutes ago   Up 6 minutes   80/tcp    my-nginx
+[ec2-user@ip-172-31-42-140 ~]$ docker rm my-ubuntu
+Error response from daemon: cannot remove container "my-ubuntu": container is running: stop the container before removing or force remove
+
+[ec2-user@ip-172-31-42-140 ~]$ docker rm -f my-ubuntu    # remove the container forcefully.
+my-ubuntu
+[ec2-user@ip-172-31-42-140 ~]$ docker ps
+CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS     NAMES
+67c624b9f63c   nginx     "/docker-entrypoint.…"   7 minutes ago   Up 7 minutes   80/tcp    my-nginx
+
+
+## Start the container with ubuntu image
+[ec2-user@ip-172-31-42-140 ~]$ docker run --name my-ubuntu1 -itd ubuntu sleep 1000
+
+### Inside the container?
+[ec2-user@ip-172-31-42-140 ~]$ docker exec -it my-ubuntu1 bash
+
+## Create user manish inside the container.
+root@64f1f3229d2c:/# useradd manish
+root@64f1f3229d2c:/# id manish
+uid=1001(manish) gid=1001(manish) groups=1001(manish)
+
+root@64f1f3229d2c:~# mkdir -p /home/manish
+root@64f1f3229d2c:~# chown manish:manish /home/manish
+root@64f1f3229d2c:~# ls -ld /home/manish
+drwxr-xr-x. 2 manish manish 6 Jul 13 08:23 /home/manish
+
+##stop the container
+[ec2-user@ip-172-31-42-140 ~]$ docker stop my-ubuntu1
+my-ubuntu1
+[ec2-user@ip-172-31-42-140 ~]$ docker ps
+CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS     NAMES
+67c624b9f63c   nginx     "/docker-entrypoint.…"   19 minutes ago   Up 19 minutes   80/tcp    my-nginx
+[ec2-user@ip-172-31-42-140 ~]$ docker ps -a
+CONTAINER ID   IMAGE                                 COMMAND                  CREATED          STATUS                        PORTS     NAMES
+64f1f3229d2c   ubuntu                                "sleep 1000"             10 minutes ago   Exited (137) 8 seconds ago              my-ubuntu1
+
+##start the container (It will bring the container back). We can see the sleep command is also running(use top).
+[ec2-user@ip-172-31-42-140 ~]$ docker exec -it my-ubuntu1 bash
+root@64f1f3229d2c:/# id manish
+uid=1001(manish) gid=1001(manish) groups=1001(manish)
+root@64f1f3229d2c:/# ls -ld /home/manish
+drwxr-xr-x. 2 manish manish 6 Jul 13 08:23 /home/manish
+
+
+Want to explore how volumes or networks behave when you remove containers? Or how to clean up everything in one go? I’ve got some slick tricks for that too.
+
+Want to see how this works with Docker Compose or how to reuse names across sessions? I can show you some neat tricks.
+
+Want to go further and remove containers after stopping them? Or explore how signals like `SIGTERM` vs `SIGKILL` affect container behavior? I can walk you through that too.
