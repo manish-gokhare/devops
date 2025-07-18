@@ -1,0 +1,14 @@
+Configure Swap Disk
+sudo fallocate -l 1G /swapfile
+   72  sudo chmod 600 /swapfile
+   73  sudo mkswap /swapfile
+   74  sudo swapon /swapfile
+   75  free -mh
+   76  conda create -n py312 python=3.12 -y
+   77  conda activate py312
+   78  conda deactivate 
+   79  conda info
+   80  ll
+   81  conda
+   82  conda list
+   83  echo '/swapfile none swap sw 0 0' | sudo tee -a 
