@@ -10,11 +10,7 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a
 
 sudo dnf update -y
 sudo dnf install wget -y
-[ec2-user@ip-172-31-21-206 ~]$ wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
-chmod +x Miniforge3-Linux-x86_64.sh
-sudo ./Miniforge3-Linux-x86_64.sh -b -p /opt/miniforge3
-sudo chown -R root:users /opt/miniforge3
-sudo chmod -R 775 /opt/miniforge3
+
 
 # Create three users (replace with actual usernames)
 sudo useradd -m user1
@@ -37,4 +33,20 @@ users:x:100:user1,user2,user3
 [ec2-user@ip-172-31-21-206 ~]$ grep '^users:' /etc/group
 users:x:100:user1,user2,user3
 
+
+# Installtion of Miniforge
+[ec2-user@ip-172-31-21-206 ~]$ wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
+chmod +x Miniforge3-Linux-x86_64.sh
+sudo ./Miniforge3-Linux-x86_64.sh -b -p /opt/miniforge3
+sudo chown -R root:users /opt/miniforge3
+sudo chmod -R 775 /opt/miniforge3
+
+
+# setup nodejs and http proxy
+   54  curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
+   55  sudo dnf install -y nodejsdnf install nodejs -y 
+   56  sudo dnf install -y nodejs
+   57  node --version
+   58  npm --version
+   59  sudo npm install -g configurable-http-proxy
 
