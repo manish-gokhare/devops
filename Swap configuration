@@ -24,6 +24,7 @@ Add all users to 'users' group
 [ec2-user@ip-172-31-21-206 ~]$ sudo usermod -aG users user1
 [ec2-user@ip-172-31-21-206 ~]$ sudo usermod -aG users user2
 [ec2-user@ip-172-31-21-206 ~]$ sudo usermod -aG users user3
+[ec2-user@ip-172-31-21-206 ~]$ sudo usermod -aG users ec2-user
 
 Validation of users group:
 [ec2-user@ip-172-31-21-206 ~]$ id user1
@@ -49,4 +50,94 @@ sudo chmod -R 775 /opt/miniforge3
    57  node --version
    58  npm --version
    59  sudo npm install -g configurable-http-proxy
+
+# Create conda environment
+
+[ec2-user@ip-172-31-21-206 ~]$ sudo /opt/miniforge3/bin/conda create -y -n myenvs python=3.9
+[ec2-user@ip-172-31-21-206 ~]$ source /opt/miniforge3/bin/activate myenvs
+(myenvs) [ec2-user@ip-172-31-21-206 ~]$ conda install -y jupyterhub notebook ipykernel
+(myenvs) [ec2-user@ip-172-31-21-206 miniforge3]$ conda install -y -c conda-forge configurable-http-proxy
+(myenvs) [ec2-user@ip-172-31-21-206 miniforge3]$ which configurable-http-proxy
+/opt/miniforge3/envs/myenvs/bin/configurable-http-proxy
+(myenvs) [ec2-user@ip-172-31-21-206 miniforge3]$ which jupyterhub
+/opt/miniforge3/envs/myenvs/bin/jupyterhub
+
+
+# Register kernel systemwide
+This command registers your Conda environment (myenvs) as a Jupyter kernel, so that it shows up as an option in Jupyter Notebook, JupyterLab, or JupyterHub.
+
+Execute the command ssytem wide  **myenvs**
+[ec2-user@ip-172-31-21-206 ~]$ sudo /opt/miniforge3/envs/myenvs/bin/python -m ipykernel install --name myenvs --display-name "Python 3.9"
+Installed kernelspec myenvs in /usr/local/share/jupyter/kernels/myenvs
+[ec2-user@ip-172-31-21-206 ~]$ ls /usr/local/share/jupyter/kernels/
+myenvs
+[ec2-user@ip-172-31-21-206 ~]$ cat /usr/local/share/jupyter/kernels/myenvs/kernel.json
+{
+ "argv": [
+  "/opt/miniforge3/envs/myenvs/bin/python",
+  "-m",
+  "ipykernel_launcher",
+  "-f",
+  "{connection_file}"
+ ],
+ "display_name": "Python 3.9",
+ "language": "python",
+ "metadata": {
+  "debugger": true
+ }
+
+
+#Generate Jupyterhub config
+
+display-name
+sudo mkdir -p /etc/jupyterhub
+sudo /opt/miniforge3/envs/myenvs/bin/jupyterhub --generate-config -f /etc/jupyterhub/jupyterhub_config.py
+
+
+sudo nano /etc/jupyterhub/jupyterhub_config.py
+
+# Bind on all IPs so it's accessible via browser
+c.JupyterHub.bind_url = 'http://:8000'
+
+# (Optional) restrict to specific users
+c.Authenticator.allowed_users = {'user1', 'user2', 'user3'}
+
+# (Optional) set an admin user who can manage via web interface
+c.Authenticator.admin_users = {'ec2-user'}
+
+# Use system PAM authentication (default)
+# Users will log in with their Linux system usernames/passwords
+c.JupyterHub.spawner_class = 'simple'
+
+#Create systemd service
+sudo nano /etc/systemd/system/jupyterhub.service
+
+[Unit]
+Description=JupyterHub server
+After=network.target
+
+[Service]
+User=root
+ExecStart=/opt/miniforge3/envs/myenvs/bin/jupyterhub -f /etc/jupyterhub/jupyterhub_config.py
+Restart=always
+Environment=PATH=/opt/miniforge3/envs/myenvs/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+
+[Install]
+WantedBy=multi-user.target
+
+
+#Start jupyterhub
+sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl enable jupyterhub
+sudo systemctl start jupyterhub
+
+# Access Juputer hub
+http://<your-ec2-public-ip>:8000
+
+
+
+
+
+
 
