@@ -15,5 +15,26 @@ bash Miniforge3-MacOSX-x86_64.sh -b -p /Users/manish/miniforge3
 Miniforge will be installed to /Users/manish/miniforge3
 
 
+# Ran into issue while running the installer script but solves afte Mac Reboot.
+
+#activating the conda environment
+
+manish@MacBook-Pro-va-FOX bin % source /Users/manish/miniforge3/bin/activate
+
+(base) manish@MacBook-Pro-va-FOX bin % conda --version
+conda 25.3.0
+
+Once activated base environment will be created. Base environment points to /Users/manish/miniforge3/bin
+I am going to create new environment myenvs.
+
+Adding visualization:
+/Users/manish/miniforge3/
+├── bin/             ← base environment's executables
+├── envs/
+│   └── myenvs/      ← your created envs go here
+├── lib/
+├── etc/
+└── ...              ← base environment content
+
 
 
