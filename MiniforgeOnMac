@@ -1,0 +1,19 @@
+# 1. Create a folder on mac for miniforge
+mkdir ~/miniforge_installer
+
+# 2. Change into that folder
+cd ~/miniforge_installer
+
+# 3. Download the Miniforge installer (for Intel Macs)
+curl -LO https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-x86_64.sh
+
+# Installed script location : /Users/manish/miniforge_installer/Miniforge3-MacOSX-x86_64.sh
+
+# Run the script in batch mode
+bash Miniforge3-MacOSX-x86_64.sh -b -p /Users/manish/miniforge3
+
+Miniforge will be installed to /Users/manish/miniforge3
+
+
+
+
