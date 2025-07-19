@@ -1,7 +1,40 @@
 Configure Swap Disk
-sudo fallocate -l 1G /swapfile
+sudo fallocate -l 2G /swapfile
 sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
 free -mh
 echo '/swapfile none swap sw 0 0' | sudo tee -a 
+
+
+
+sudo dnf update -y
+sudo dnf install wget -y
+[ec2-user@ip-172-31-21-206 ~]$ wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
+chmod +x Miniforge3-Linux-x86_64.sh
+sudo ./Miniforge3-Linux-x86_64.sh -b -p /opt/miniforge3
+sudo chown -R root:users /opt/miniforge3
+sudo chmod -R 775 /opt/miniforge3
+
+# Create three users (replace with actual usernames)
+sudo useradd -m user1
+sudo passwd user1
+sudo useradd -m user2
+sudo passwd user2
+sudo useradd -m user3
+sudo passwd user3
+
+Add all users to 'users' group
+[ec2-user@ip-172-31-21-206 ~]$ sudo usermod -aG users user1
+[ec2-user@ip-172-31-21-206 ~]$ sudo usermod -aG users user2
+[ec2-user@ip-172-31-21-206 ~]$ sudo usermod -aG users user3
+
+Validation of users group:
+[ec2-user@ip-172-31-21-206 ~]$ id user1
+uid=1001(user1) gid=1001(user1) groups=1001(user1),100(users)
+[ec2-user@ip-172-31-21-206 ~]$ getent group users
+users:x:100:user1,user2,user3
+[ec2-user@ip-172-31-21-206 ~]$ grep '^users:' /etc/group
+users:x:100:user1,user2,user3
+
+
