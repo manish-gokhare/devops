@@ -1,5 +1,6 @@
+
 Configure Swap Disk
-sudo fallocate -l 2G /swapfile
+sudo fallocate -l 1G /swapfile
 sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
@@ -37,6 +38,10 @@ users:x:100:user1,user2,user3
 
 # Installtion of Miniforge
 [ec2-user@ip-172-31-21-206 ~]$ wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
+
+or (using curl command):
+
+curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
 chmod +x Miniforge3-Linux-x86_64.sh
 sudo ./Miniforge3-Linux-x86_64.sh -b -p /opt/miniforge3
 sudo chown -R root:users /opt/miniforge3
@@ -61,6 +66,22 @@ sudo chmod -R 775 /opt/miniforge3
 /opt/miniforge3/envs/myenvs/bin/configurable-http-proxy
 (myenvs) [ec2-user@ip-172-31-21-206 miniforge3]$ which jupyterhub
 /opt/miniforge3/envs/myenvs/bin/jupyterhub
+
+or using yaml script
+
+name: myenvs
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.9
+  - jupyterhub
+  - notebook
+  - ipykernel
+
+conda env create -f environment.yml
+conda activate myenvs
+
 
 
 # Register kernel systemwide
