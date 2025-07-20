@@ -37,4 +37,60 @@ Adding visualization:
 └── ...              ← base environment content
 
 
+If I execute conda info then check for base environment.
+base environment : /Users/manish/miniforge3  (writable)
+
+manish@MacBook-Pro-va-FOX envs % conda info 
+
+     active environment : None
+            shell level : 0
+       user config file : /Users/manish/.condarc
+ populated config files : /Users/manish/miniforge3/.condarc
+          conda version : 25.3.0
+    conda-build version : not installed
+         python version : 3.12.10.final.0
+                 solver : libmamba (default)
+       virtual packages : __archspec=1=skylake
+                          __conda=25.3.0=0
+                          __osx=15.5=0
+                          __unix=0=0
+       base environment : /Users/manish/miniforge3  (writable)
+      conda av data dir : /Users/manish/miniforge3/etc/conda
+  conda av metadata url : None
+           channel URLs : https://conda.anaconda.org/conda-forge/osx-64
+                          https://conda.anaconda.org/conda-forge/noarch
+          package cache : /Users/manish/miniforge3/pkgs
+                          /Users/manish/.conda/pkgs
+       envs directories : /Users/manish/miniforge3/envs
+                          /Users/manish/.conda/envs
+               platform : osx-64
+             user-agent : conda/25.3.0 requests/2.32.3 CPython/3.12.10 Darwin/24.5.0 OSX/15.5 solver/libmamba conda-libmamba-solver/25.3.0 libmambapy/2.1.1
+                UID:GID : 502:20
+             netrc file : None
+           offline mode : False
+
+
+# Create conda environment once base environment is activate. conda command need to be active. No need to run this command from base env.
+
+conda create -n myenvs python=3.9 jupyterhub notebook ipykernel -y
+
+> Creates a new Conda environment named myenvs
+
+Installs:
+
+python=3.9
+
+jupyterhub
+
+notebook
+
+ipykernel (so this environment can be used in Jupyter interfaces)
+
+#activate myenvs environment:
+
+conda activate myenvs
+
+# Register myenvs with Jupyter interface
+
+python -m ipykernel install --user --name=myenvs --display-name "Python 3.9 (myenvs)"
 
